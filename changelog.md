@@ -1,5 +1,9 @@
 # B4 - Bye Bye Big Bro
 
+## [1.39.0] - 2026-02-28
+
+- IMPROVED: **Smarter Discovery** — reworked strategy testing to use real-world technique combinations instead of testing individual tricks in isolation. If Discovery says a strategy works, it should actually work when you add it.
+
 ## [1.38.0] - 2026-02-27
 
 - CHANGED: **Vendor Lookup is now optional** — the ~6MB device manufacturer database is no longer downloaded at startup. Enable it in `Settings > Device Filtering > Vendor Lookup` if you want to see device brand names.
