@@ -183,14 +183,16 @@ func (ds *DiscoverySuite) getPayloadName(payloadType int) string {
 
 func (ds *DiscoverySuite) testPresetWithPayload(preset ConfigPreset, payloadType int) CheckResult {
 	modifiedPreset := preset
-	modifiedPreset.Config.Faking.SNIType = payloadType
 
 	if payloadType >= config.FakePayloadCapture {
+		modifiedPreset.Config.Faking.SNIType = config.FakePayloadCapture
 		idx := payloadType - config.FakePayloadCapture
 		if idx < len(ds.customPayloads) {
 			modifiedPreset.Config.Faking.PayloadFile = ds.customPayloads[idx].Filepath
 			modifiedPreset.Config.Faking.PayloadData = ds.customPayloads[idx].Data
 		}
+	} else {
+		modifiedPreset.Config.Faking.SNIType = payloadType
 	}
 
 	return ds.testPresetInternal(modifiedPreset)
@@ -233,6 +235,14 @@ func (ds *DiscoverySuite) testPresetWithBestPayload(preset ConfigPreset) CheckRe
 
 	if hasWorkingPayload {
 		return ds.testPresetWithPayload(preset, ds.bestPayload)
+	}
+
+	for i := range ds.customPayloads {
+		result := ds.testPresetWithPayload(preset, config.FakePayloadCapture+i)
+		if result.Status == CheckStatusComplete {
+			ds.updatePayloadKnowledge(config.FakePayloadCapture+i, result.Speed)
+			return result
+		}
 	}
 
 	result1 := ds.testPresetWithPayload(preset, config.FakePayloadDefault1)

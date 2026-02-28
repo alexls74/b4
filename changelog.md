@@ -3,6 +3,7 @@
 ## [1.39.0] - 2026-02-28
 
 - IMPROVED: **Smarter Discovery** — reworked strategy testing to use real-world technique combinations instead of testing individual tricks in isolation. If Discovery says a strategy works, it should actually work when you add it.
+- FIXED: **Custom payloads ignored during Discovery** — selecting custom payloads no longer silently falls back to built-in ones like duckduckgo. Your custom payloads are now properly used in the discovered configuration.
 
 ## [1.38.0] - 2026-02-27
 
