@@ -298,7 +298,7 @@ func (ds *DiscoverySuite) runPhase1(presets []ConfigPreset) ([]StrategyFamily, f
 		ds.storeResult(preset, result)
 
 		if result.Status == CheckStatusComplete {
-			if result.Speed > baselineSpeed*0.8 {
+			if result.Speed > baselineSpeed*0.8 && preset.Family != FamilyNone {
 				workingFamilies = append(workingFamilies, preset.Family)
 			}
 		}
@@ -349,10 +349,10 @@ func (ds *DiscoverySuite) runPhase2(families []StrategyFamily) map[StrategyFamil
 }
 
 func (ds *DiscoverySuite) optimizeFakeSNI() ConfigPreset {
-	log.DiscoveryLogf("  Optimizing FakeSNI with binary search")
+	log.DiscoveryLogf("  Optimizing FakeSNI with TTL scan + strategy rotation")
 
 	ds.CheckSuite.mu.Lock()
-	ds.TotalChecks += 10
+	ds.TotalChecks += 13
 	ds.CheckSuite.mu.Unlock()
 
 	base := baseConfig()
@@ -382,12 +382,12 @@ func (ds *DiscoverySuite) optimizeFakeSNI() ConfigPreset {
 	basePreset.Name = fmt.Sprintf("fake-ttl%d-optimized", optimalTTL)
 
 	strategies := []string{"pastseq", "timestamp", "ttl", "randseq"}
-	var bestStrategy string = "pastseq"
+	var bestStrategy string = "ttl"
 	var bestSpeed = speed
 
 	for _, strat := range strategies {
-		if strat == "pastseq" {
-			continue // Already tested
+		if strat == "ttl" {
+			continue
 		}
 
 		preset := basePreset
@@ -417,9 +417,8 @@ func (ds *DiscoverySuite) optimizeFakeSNI() ConfigPreset {
 }
 
 func (ds *DiscoverySuite) optimizeCombo() ConfigPreset {
-	log.DiscoveryLogf("  Optimizing Combo with TTL binary search + strategy rotation")
+	log.DiscoveryLogf("  Optimizing Combo with TTL scan + strategy rotation")
 
-	// TTL probe (5 iterations) + 4 strategies + 3x3 shuffle/delay variants = ~21 checks
 	ds.CheckSuite.mu.Lock()
 	ds.TotalChecks += 21
 	ds.CheckSuite.mu.Unlock()
@@ -445,7 +444,7 @@ func (ds *DiscoverySuite) optimizeCombo() ConfigPreset {
 		Config: base,
 	}
 
-	// Step 1: Find optimal TTL via binary search
+	// Step 1: Find optimal TTL via linear scan
 	optimalTTL, speed := ds.findOptimalTTL(basePreset)
 	if optimalTTL == 0 {
 		log.DiscoveryLogf("  No working TTL found for Combo, falling back to preset optimization")
@@ -475,11 +474,11 @@ func (ds *DiscoverySuite) optimizeCombo() ConfigPreset {
 
 func (ds *DiscoverySuite) optimizeComboStrategy(basePreset ConfigPreset, optimalTTL uint8, initialSpeed float64) (string, float64) {
 	strategies := []string{"pastseq", "timestamp", "ttl", "randseq"}
-	bestStrategy := "pastseq"
+	bestStrategy := "ttl" // TTL strategy was used during findOptimalTTL probe
 	bestSpeed := initialSpeed
 
 	for _, strat := range strategies {
-		if strat == "pastseq" {
+		if strat == "ttl" {
 			continue // Already tested during TTL search
 		}
 
