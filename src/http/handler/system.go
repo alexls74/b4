@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -48,11 +49,42 @@ func detectServiceManager() string {
 	return "standalone"
 }
 
-// isDockerEnvironment checks if the process is running inside a Docker container
+// isDockerEnvironment checks if the process is running inside a container
+// Supports Docker, MikroTik containers, and other container runtimes
 func isDockerEnvironment() bool {
+	// Check for /.dockerenv file (standard Docker)
 	if _, err := os.Stat("/.dockerenv"); err == nil {
 		return true
 	}
+
+	// Check for /.dockerinit file (some Docker variants)
+	if _, err := os.Stat("/.dockerinit"); err == nil {
+		return true
+	}
+
+	// Check for container environment variable (used by many container runtimes)
+	if os.Getenv("container") != "" {
+		return true
+	}
+
+	// Check for Docker-specific environment variables
+	if os.Getenv("DOCKER_CONTAINER") == "true" {
+		return true
+	}
+
+	// Check cgroup for container detection
+	if data, err := os.ReadFile("/proc/1/cgroup"); err == nil {
+		content := string(data)
+		// Check for various container runtime signatures
+		if strings.Contains(content, "docker") ||
+			strings.Contains(content, "lxc") ||
+			strings.Contains(content, "containerd") ||
+			strings.Contains(content, "kubepods") ||
+			strings.Contains(content, "microk8s") {
+			return true
+		}
+	}
+
 	return false
 }
 
