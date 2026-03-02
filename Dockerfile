@@ -47,8 +47,9 @@ RUN apk add --no-cache \
     iproute2
 
 COPY --from=go-builder /b4 /usr/local/bin/b4
+COPY docker-init.sh /docker-init.sh
 
 VOLUME /etc/b4
 EXPOSE 7000
 
-ENTRYPOINT ["b4"]
+ENTRYPOINT ["/docker-init.sh"]
