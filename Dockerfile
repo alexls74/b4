@@ -48,6 +48,7 @@ RUN apk add --no-cache \
 
 COPY --from=go-builder /b4 /usr/local/bin/b4
 COPY docker-init.sh /docker-init.sh
+RUN chmod +x /docker-init.sh
 
 VOLUME /etc/b4
 EXPOSE 7000
